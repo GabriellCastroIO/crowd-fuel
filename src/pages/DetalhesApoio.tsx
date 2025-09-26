@@ -139,13 +139,18 @@ export default function DetalhesApoio() {
     window.Infinitepay && 
     typeof window.Infinitepay.receiveTapPayment === 'function';
   
-  // TEMPORÁRIO: Liberado para todos testarem
+  // TEMPORÁRIO: Forçando visibilidade do botão para testes
   // TODO: Depois dos testes, voltar para: const canUseTapPayment = isOwner && isTapPaymentAvailable;
-  const canUseTapPayment = isTapPaymentAvailable;
+  const canUseTapPayment = true; // FORÇADO PARA TESTES
   
       // Debug logs para verificar por que o botão não aparece
   useEffect(() => {
-    console.log('🔍 Debug Tap Payment (MODO TESTE - Liberado para todos):', {
+    // Log direto do window.Infinitepay
+    console.log('🚀 window.Infinitepay:', window.Infinitepay);
+    console.log('🚀 typeof window:', typeof window);
+    console.log('🚀 window keys:', typeof window !== 'undefined' ? Object.keys(window).filter(k => k.toLowerCase().includes('infinit')) : 'window não disponível');
+    
+    console.log('🔍 Debug Tap Payment (MODO TESTE - BOTÃO FORÇADO):', {
         user: currentUser ? {
           id: currentUser?.id,
           name: currentUser?.name,
@@ -177,6 +182,18 @@ export default function DetalhesApoio() {
   }, [currentUser, apoio, isOwner, isInfinitepayAvailable, isTapPaymentAvailable, canUseTapPayment, isWebView, isMobile]);
   
   const handleTapPayment = async () => {
+    // Verificar se a API está disponível antes de prosseguir
+    if (!window.Infinitepay || typeof window.Infinitepay.receiveTapPayment !== 'function') {
+      toast({
+        title: 'API não disponível',
+        description: 'A função de pagamento por tap não está disponível. Certifique-se de estar usando o app InfinitePay.',
+        variant: 'destructive',
+      });
+      console.error('window.Infinitepay.receiveTapPayment não está disponível');
+      console.log('window.Infinitepay:', window.Infinitepay);
+      return;
+    }
+    
     if (!tapValor || !tapClientName) {
       toast({
         title: 'Campos obrigatórios',
@@ -214,14 +231,26 @@ export default function DetalhesApoio() {
     try {
       const orderNsu = `TAP_${Date.now()}`;
       
-      const paymentResult = await executeTapPayment({
+      console.log('Executando tap payment com window.Infinitepay.receiveTapPayment:', {
         amount: valorCentavos,
         orderNsu: orderNsu,
         installments: tapPaymentMethod === 'debit' ? 1 : parseInt(tapInstallments),
-        paymentMethod: tapPaymentMethod,
+        paymentMethod: tapPaymentMethod === 'credit' ? PaymentMethod.CREDIT : PaymentMethod.DEBIT,
       });
       
-      if (paymentResult) {
+      // Chamar diretamente a API do window.Infinitepay
+      const response = await window.Infinitepay.receiveTapPayment({
+        amount: valorCentavos,
+        orderNsu: orderNsu,
+        installments: tapPaymentMethod === 'debit' ? 1 : parseInt(tapInstallments),
+        paymentMethod: tapPaymentMethod === 'credit' ? PaymentMethod.CREDIT : PaymentMethod.DEBIT,
+      });
+      
+      console.log('Resposta do tap payment:', response);
+      
+      if (response.status === 'success' && response.data) {
+        const paymentResult = response.data;
+        
         // Save tap payment to database
         const { error: saveError } = await supabase
           .from('apoiadores')
@@ -277,6 +306,8 @@ export default function DetalhesApoio() {
             setApoiadores(newApoiadores);
           }
         }
+      } else {
+        throw new Error(response.message || 'Pagamento falhou');
       }
     } catch (error) {
       console.error('Erro no pagamento por tap:', error);
@@ -653,8 +684,8 @@ export default function DetalhesApoio() {
 
                 {/* Support Button - Desktop */}
                 <div className="mt-auto space-y-3">
-                  {/* Tap Payment Button - TEMPORÁRIO: Liberado para todos testarem */}
-                  {canUseTapPayment && (
+                  {/* Tap Payment Button - FORÇADO PARA TESTES */}
+                  {/* FORÇADO PARA TESTES - Sempre mostra o botão */}
                     <Button
                       className="w-full"
                       size="lg"
@@ -664,7 +695,6 @@ export default function DetalhesApoio() {
                       <CreditCard className="h-4 w-4 mr-2" />
                       Cobrar por Tap (Presencial)
                     </Button>
-                  )}
                   
                   <Dialog open={desktopDialogOpen} onOpenChange={setDesktopDialogOpen}>
                     <DialogTrigger asChild>
@@ -734,8 +764,7 @@ export default function DetalhesApoio() {
                   </DialogContent>
                 </Dialog>
                 
-                {/* Tap Payment Modal */}
-                {canUseTapPayment && (
+                {/* Tap Payment Modal - FORÇADO PARA TESTES */}
                   <Drawer open={tapPaymentOpen} onOpenChange={setTapPaymentOpen}>
                     <DrawerContent className="px-4 pb-6">
                       <DrawerHeader>
@@ -852,7 +881,7 @@ export default function DetalhesApoio() {
                       </div>
                     </DrawerContent>
                   </Drawer>
-                )}
+                  {/* FIM DO TAP PAYMENT MODAL - FORÇADO PARA TESTES */}
                 </div>
               </CardContent>
             </Card>
