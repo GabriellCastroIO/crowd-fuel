@@ -653,11 +653,6 @@ export default function DetalhesApoio() {
                     <span className="hidden sm:inline">Sobre</span>
                     <span className="sm:hidden">Sobre</span>
                   </TabsTrigger>
-                  <TabsTrigger value="beneficios" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
-                    <Gift className="h-3 w-3 sm:h-4 sm:w-4" />
-                    <span className="hidden sm:inline">Benefícios</span>
-                    <span className="sm:hidden">Benefícios</span>
-                  </TabsTrigger>
                   <TabsTrigger value="apoiadores" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
                     <User className="h-3 w-3 sm:h-4 sm:w-4" />
                     <span className="hidden sm:inline">Apoiadores</span>
@@ -674,16 +669,6 @@ export default function DetalhesApoio() {
                         {isMobile ? new Date(apoio.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }) : `Criado em ${new Date(apoio.created_at).toLocaleDateString('pt-BR')}`}
                       </div>
                     </div>
-                  </TabsContent>
-                  
-                  <TabsContent value="beneficios" className="p-4 sm:p-6 m-0">
-                    {apoio.beneficios ? (
-                      <p className="whitespace-pre-wrap text-sm sm:text-base">{apoio.beneficios}</p>
-                    ) : (
-                      <p className="text-muted-foreground text-sm sm:text-base text-center py-8">
-                        Os benefícios deste apoio serão informados em breve.
-                      </p>
-                    )}
                   </TabsContent>
                   
                   <TabsContent value="apoiadores" className="p-4 sm:p-6 m-0">
