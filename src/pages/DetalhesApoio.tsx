@@ -543,7 +543,7 @@ export default function DetalhesApoio() {
           {/* Desktop Layout - Image and Progress Side by Side */}
           <div className="hidden lg:grid lg:grid-cols-2 gap-6">
             {/* Image - Desktop */}
-            <div className="overflow-hidden rounded-lg">
+            <div className="overflow-hidden rounded-lg flex">
               <img
                 src={apoio.imagem_url || "/placeholder.svg"}
                 alt={apoio.titulo}
@@ -567,7 +567,7 @@ export default function DetalhesApoio() {
                   )}
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4 p-4 sm:p-6 pt-0 flex-1 flex flex-col">
+              <CardContent className="space-y-3 p-4 sm:p-6 pt-0 pb-4 sm:pb-6 flex-1 flex flex-col">
                 {/* Progress */}
                 <div className="space-y-2">
                   <div className="flex justify-between text-xs sm:text-sm">
@@ -591,7 +591,7 @@ export default function DetalhesApoio() {
                 </div>
 
                 {/* Support Button - Desktop */}
-                <div className="mt-auto space-y-3">
+                <div className="mt-4 space-y-3">
                   {/* Owner Tap Payment Button - Only in WebView */}
                   {canUseTapPayment && (
                     <Button
