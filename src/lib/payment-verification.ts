@@ -1,4 +1,5 @@
 // Payment verification utilities
+import { supabase } from '@/integrations/supabase/client';
 
 export interface PaymentVerificationParams {
   receipt_url: string;
@@ -20,25 +21,20 @@ export async function verifyPayment(
   slug: string
 ): Promise<PaymentVerificationResponse> {
   try {
-    const response = await fetch('https://tuiwratkqezsiweocbpu.supabase.co/functions/v1/verify-payment', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
+    const { data, error } = await supabase.functions.invoke('verify-payment', {
+      body: {
         handle,
         transaction_nsu: transactionNsu,
         external_order_nsu: externalOrderNsu,
         slug
-      })
+      }
     });
 
-    if (!response.ok) {
-      throw new Error(`Payment verification failed: ${response.status}`);
+    if (error) {
+      throw error;
     }
 
-    const data: PaymentVerificationResponse = await response.json();
-    return data;
+    return data as PaymentVerificationResponse;
   } catch (error) {
     console.error('Payment verification error:', error);
     return {
