@@ -710,18 +710,18 @@ export default function DetalhesApoio() {
 
                 {/* Support Button - Desktop */}
                 <div className="mt-auto space-y-3">
-                  {/* Tap Payment Button - Only for campaign owner */}
-                  {canUseTapPayment && (
-                    <Button
-                      className="w-full"
-                      size="lg"
-                      variant="outline"
-                      onClick={() => setTapPaymentOpen(true)}
-                    >
-                      <CreditCard className="h-4 w-4 mr-2" />
-                      Cobrar por Tap (Presencial)
-                    </Button>
-                  )}
+                   {/* Tap Payment Button - Only for campaign owner */}
+                   {canUseTapPayment && (
+                     <Button
+                       className="w-full"
+                       size="lg"
+                       variant="outline"
+                       onClick={() => navigate(`/apoio/${apoio.id}/tap-payment`)}
+                     >
+                       <CreditCard className="h-4 w-4 mr-2" />
+                       Cobrar por Tap (Presencial)
+                     </Button>
+                   )}
                   
                   <Button
                     className="w-full"
@@ -733,9 +733,6 @@ export default function DetalhesApoio() {
                     {campanhaFinalizada ? 'Meta atingida!' : 'Apoiar agora'}
                   </Button>
                 
-                {/* Tap Payment Modal - Only for campaign owner */}
-                {canUseTapPayment && (
-                  <Drawer open={tapPaymentOpen} onOpenChange={setTapPaymentOpen}>
                     <DrawerContent className="px-4 pb-6">
                       <DrawerHeader>
                         <DrawerTitle className="text-left">Cobrar por Tap - Pagamento Presencial</DrawerTitle>
@@ -921,18 +918,18 @@ export default function DetalhesApoio() {
 
                 {/* Support Buttons - Mobile */}
                 <div className="space-y-3">
-                  {/* Tap Payment Button - Only for campaign owner */}
-                  {canUseTapPayment && (
-                    <Button
-                      className="w-full"
-                      size="default"
-                      variant="outline"
-                      onClick={() => setTapPaymentOpen(true)}
-                    >
-                      <CreditCard className="h-4 w-4 mr-2" />
-                      Cobrar por Tap (Presencial)
-                    </Button>
-                  )}
+                   {/* Tap Payment Button - Only for campaign owner */}
+                   {canUseTapPayment && (
+                     <Button
+                       className="w-full"
+                       size="default"
+                       variant="outline"
+                       onClick={() => navigate(`/apoio/${apoio.id}/tap-payment`)}
+                     >
+                       <CreditCard className="h-4 w-4 mr-2" />
+                       Cobrar por Tap (Presencial)
+                     </Button>
+                   )}
                   
                   {/* Regular Support Button */}
                   <Button
