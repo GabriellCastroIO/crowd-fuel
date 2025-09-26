@@ -204,7 +204,6 @@ export default function ApoioSucesso() {
             {/* Informações adicionais */}
             <div className="bg-muted/50 rounded-lg p-3 sm:p-4 text-xs sm:text-sm text-muted-foreground">
               <p>
-                Você receberá um comprovante do pagamento por email. 
                 O valor será destinado diretamente para o criador do apoio.
               </p>
             </div>
