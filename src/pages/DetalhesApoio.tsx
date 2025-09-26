@@ -723,73 +723,15 @@ export default function DetalhesApoio() {
                     </Button>
                   )}
                   
-                  <Dialog open={desktopDialogOpen} onOpenChange={setDesktopDialogOpen}>
-                    <DialogTrigger asChild>
-                      <Button
-                        className="w-full"
-                        size="lg"
-                        disabled={campanhaFinalizada}
-                      >
-                        <Heart className="h-4 w-4 mr-2" />
-                        {campanhaFinalizada ? 'Meta atingida!' : 'Apoiar agora'}
-                      </Button>
-                    </DialogTrigger>
-                    
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Apoiar: {apoio.titulo}</DialogTitle>
-                    </DialogHeader>
-                    
-                    <div className="space-y-4">
-                      <div>
-                        <Label htmlFor="valor">Valor do apoio (R$)</Label>
-                        <Input
-                          id="valor"
-                          type="text"
-                          placeholder="Digite o valor (ex: 10,50)"
-                          value={valor}
-                          onChange={handleValorChange}
-                        />
-                      </div>
-
-                      <div>
-                        <Label htmlFor="nome">Seu nome</Label>
-                        <Input
-                          id="nome"
-                          placeholder="Como você quer aparecer (mín. 3 chars)"
-                          value={nome}
-                          onChange={handleNomeChange}
-                          maxLength={20}
-                        />
-                      </div>
-                        
-                      <div>
-                        <Label htmlFor="email">Email para contato</Label>
-                        <Input
-                          id="email"
-                          type="email"
-                          placeholder="seu@email.com"
-                          value={email}
-                          onChange={handleEmailChange}
-                        />
-                      </div>
-
-                      <Button
-                        onClick={handleApoiar}
-                        disabled={campanhaFinalizada || paymentLoading || !valor || !nome || !email}
-                        className="w-full"
-                        size="lg"
-                      >
-                        {campanhaFinalizada
-                          ? 'Campanha finalizada'
-                          : paymentLoading
-                            ? 'Processando...'
-                            : `Apoiar com R$ ${valor || '0,00'}`
-                        }
-                      </Button>
-                    </div>
-                  </DialogContent>
-                </Dialog>
+                  <Button
+                    className="w-full"
+                    size="lg"
+                    disabled={campanhaFinalizada}
+                    onClick={() => navigate(`/apoio/${apoio.id}/apoiar`)}
+                  >
+                    <Heart className="h-4 w-4 mr-2" />
+                    {campanhaFinalizada ? 'Meta atingida!' : 'Apoiar agora'}
+                  </Button>
                 
                 {/* Tap Payment Modal - Only for campaign owner */}
                 {canUseTapPayment && (
@@ -993,88 +935,15 @@ export default function DetalhesApoio() {
                   )}
                   
                   {/* Regular Support Button */}
-                  <Drawer open={mobileDrawerOpen} onOpenChange={setMobileDrawerOpen}>
-                    <DrawerTrigger asChild>
-                      <Button
-                        className="w-full"
-                        size="default"
-                        disabled={campanhaFinalizada}
-                      >
-                        <Heart className="h-4 w-4 mr-2" />
-                        {campanhaFinalizada ? 'Meta atingida!' : 'Apoiar agora'}
-                      </Button>
-                    </DrawerTrigger>
-                    
-                  <DrawerContent className="px-4 pb-6 max-h-[80vh] overflow-y-auto">
-                    <DrawerHeader className="sticky top-0 bg-background z-10">
-                      <DrawerTitle className="text-left">Apoiar: {apoio.titulo}</DrawerTitle>
-                    </DrawerHeader>
-                    
-                    <div className="space-y-4 mt-4 pb-4">
-                      <div>
-                        <Label htmlFor="valor" className="text-sm">Valor do apoio (R$)</Label>
-                        <Input
-                          id="valor"
-                          type="text"
-                          placeholder="Digite o valor (ex: 10,50)"
-                          value={valor}
-                          onChange={handleValorChange}
-                          className="text-base"
-                          style={{ 
-                            WebkitAppearance: 'none',
-                            appearance: 'none'
-                          }}
-                        />
-                      </div>
-
-                      <div>
-                        <Label htmlFor="nome" className="text-sm">Seu nome</Label>
-                        <Input
-                          id="nome"
-                          placeholder="Como você quer aparecer (mín. 3 chars)"
-                          value={nome}
-                          onChange={handleNomeChange}
-                          maxLength={20}
-                          className="text-base"
-                          style={{ 
-                            WebkitAppearance: 'none',
-                            appearance: 'none'
-                          }}
-                        />
-                      </div>
-                        
-                      <div>
-                        <Label htmlFor="email" className="text-sm">Email para contato</Label>
-                        <Input
-                          id="email"
-                          type="email"
-                          placeholder="seu@email.com"
-                          value={email}
-                          onChange={handleEmailChange}
-                          className="text-base"
-                          style={{ 
-                            WebkitAppearance: 'none',
-                            appearance: 'none'
-                          }}
-                        />
-                      </div>
-
-                      <Button
-                        onClick={handleApoiar}
-                        disabled={campanhaFinalizada || paymentLoading || !valor || !nome || !email}
-                        className="w-full"
-                        size="lg"
-                      >
-                        {campanhaFinalizada
-                          ? 'Campanha finalizada'
-                          : paymentLoading
-                            ? 'Processando...'
-                            : `Apoiar com R$ ${valor || '0,00'}`
-                        }
-                      </Button>
-                    </div>
-                  </DrawerContent>
-                </Drawer>
+                  <Button
+                    className="w-full"
+                    size="default"
+                    disabled={campanhaFinalizada}
+                    onClick={() => navigate(`/apoio/${apoio.id}/apoiar`)}
+                  >
+                    <Heart className="h-4 w-4 mr-2" />
+                    {campanhaFinalizada ? 'Meta atingida!' : 'Apoiar agora'}
+                  </Button>
                 </div>
               </CardContent>
             </Card>
