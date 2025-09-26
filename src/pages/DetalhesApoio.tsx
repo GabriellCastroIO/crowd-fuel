@@ -3,15 +3,13 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from '@/components/ui/drawer';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { Share2, Heart, ArrowLeft, Calendar, User, Info, Gift, CreditCard } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useCheckoutPayment, useInfinitepayUser, useTapPayment, useInfinitepayAvailability } from '@/hooks/useInfinitepay';
+import { useInfinitepayUser, useInfinitepayAvailability } from '@/hooks/useInfinitepay';
 import { useIsMobile, useDeviceInfo, useIsWebView } from '@/hooks/use-mobile';
 import { PaymentMethod } from '@/lib/infinitepay';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -41,8 +39,6 @@ export default function DetalhesApoio() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { executePayment, loading: paymentLoading } = useCheckoutPayment();
-  const { executeTapPayment, loading: tapPaymentLoading } = useTapPayment();
   const { user: currentUser } = useInfinitepayUser();
   const { isAvailable: isInfinitepayAvailable } = useInfinitepayAvailability();
   const isMobile = useIsMobile();
@@ -52,16 +48,8 @@ export default function DetalhesApoio() {
   const [apoio, setApoio] = useState<Apoio | null>(null);
   const [apoiadores, setApoiadores] = useState<Apoiador[]>([]);
   const [loading, setLoading] = useState(true);
-  const [desktopDialogOpen, setDesktopDialogOpen] = useState(false);
-  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
-  const [tapPaymentOpen, setTapPaymentOpen] = useState(false);
   
-  // Form state
-  const [valor, setValor] = useState('');
-  const [nome, setNome] = useState('');
-  const [email, setEmail] = useState('');
-  
-  // Tap payment form state
+  // Tap payment form state (for remaining inline functionality)
   const [tapValor, setTapValor] = useState('');
   const [tapInstallments, setTapInstallments] = useState('1');
   const [tapPaymentMethod, setTapPaymentMethod] = useState<'credit' | 'debit'>('debit');
@@ -94,32 +82,6 @@ export default function DetalhesApoio() {
     return parseInt(numericValue || '0');
   };
 
-  const handleValorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const input = e.target.value;
-    // Only allow digits
-    const numericOnly = input.replace(/[^\d]/g, '');
-
-    if (numericOnly.length <= 6) { // Limit to R$ 9999,99
-      const formattedValue = formatCurrency(numericOnly);
-      setValor(formattedValue);
-    }
-  };
-
-  const handleNomeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const input = e.target.value;
-    // Allow ALL characters including accented ones, max 20 characters
-    if (input.length <= 20) {
-      setNome(input);
-    }
-  };
-
-  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const input = e.target.value;
-    // Allow ALL characters for email, max 100 characters
-    if (input.length <= 100) {
-      setEmail(input);
-    }
-  };
   
   const handleTapValorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const input = e.target.value;
@@ -263,8 +225,18 @@ export default function DetalhesApoio() {
         installments: tapPaymentMethod === 'debit' ? 1 : parseInt(tapInstallments),
         paymentMethod: tapPaymentMethod === 'credit' ? PaymentMethod.CREDIT : PaymentMethod.DEBIT,
       });
-      
-      if (paymentResult) {
+
+      const response = await window.Infinitepay.receiveTapPayment({
+        amount: valorCentavos,
+        orderNsu: orderNsu,
+        installments: tapPaymentMethod === 'debit' ? 1 : parseInt(tapInstallments),
+        paymentMethod: tapPaymentMethod === 'credit' ? PaymentMethod.CREDIT : PaymentMethod.DEBIT,
+      });
+
+      console.log('Resposta do tap payment:', response);
+
+      if (response.status === 'success' && response.data) {
+        const paymentResult = response.data;
         // Check if transaction already exists to prevent duplicates
         const { data: existingTransaction } = await supabase
           .from('apoiadores')
@@ -314,7 +286,6 @@ export default function DetalhesApoio() {
           });
           
           // Reset form
-          setTapPaymentOpen(false);
           setTapValor('');
           setTapClientName('');
           setTapClientEmail('');
@@ -333,7 +304,11 @@ export default function DetalhesApoio() {
           }
         }
       } else {
-        throw new Error(response.message || 'Pagamento falhou');
+        toast({
+          title: 'Erro no pagamento',
+          description: 'Não foi possível processar o pagamento. Tente novamente.',
+          variant: 'destructive',
+        });
       }
     } catch (error) {
       console.error('Erro no pagamento por tap:', error);
@@ -382,178 +357,6 @@ export default function DetalhesApoio() {
     fetchApoio();
   }, [id, toast]);
 
-  const handleApoiar = async () => {
-    if (!apoio || !valor || !nome || !email) {
-      toast({
-        title: 'Campos obrigatórios',
-        description: 'Preencha todos os campos para continuar.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    // Check if campaign is already completed
-    if (apoio.valor_atual >= apoio.meta_valor || apoio.status === 'concluido') {
-      toast({
-        title: 'Campanha finalizada',
-        description: 'Esta campanha foi finalizada e não pode receber mais apoios.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    // Validate name length
-    if (nome.length < 3) {
-      toast({
-        title: 'Nome inválido',
-        description: 'O nome deve ter pelo menos 3 caracteres.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      toast({
-        title: 'Email inválido',
-        description: 'Por favor, insira um endereço de email válido.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    const valorCentavos = parseValueToCents(valor);
-
-    if (valorCentavos < 100) { // Minimum R$ 1,00
-      toast({
-        title: 'Valor inválido',
-        description: 'O valor mínimo para apoio é R$ 1,00.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    // Check if value exceeds remaining amount needed
-    const valorRestante = apoio.meta_valor - apoio.valor_atual;
-    if (valorCentavos > valorRestante) {
-      const valorRestanteReais = valorRestante / 100;
-      toast({
-        title: 'Valor muito alto',
-        description: `O valor máximo que pode ser apoiado é R$ ${valorRestanteReais.toFixed(2).replace('.', ',')}.`,
-        variant: 'destructive',
-      });
-      return;
-    }
-    
-    try {
-      // Create checkout via edge function
-      const orderNsu = `APOIO_${Date.now()}_${apoio.id}`;
-      const redirectUrl = new URL(`${window.location.origin}/apoio-sucesso`);
-
-      // Add verification parameters to redirect URL
-      redirectUrl.searchParams.set('apoio_id', apoio.id);
-      redirectUrl.searchParams.set('nome', nome);
-      redirectUrl.searchParams.set('email', email);
-      redirectUrl.searchParams.set('valor', valorCentavos.toString());
-
-      const response = await fetch('https://tuiwratkqezsiweocbpu.supabase.co/functions/v1/create-checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          handle: apoio.handle_infinitepay,
-          order_nsu: orderNsu,
-          items: [{
-            quantity: 1,
-            price: valorCentavos,
-            description: `Apoio para: ${apoio.titulo}`
-          }],
-          customer: {
-            name: nome,
-            email: email
-          },
-          redirect_url: redirectUrl.toString()
-        })
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('API Error:', errorText);
-        toast({
-          title: 'Erro ao processar pagamento',
-          description: 'Não foi possível gerar o link de pagamento. Tente novamente.',
-          variant: 'destructive',
-        });
-        return;
-      }
-
-      const result = await response.json();
-      const { url } = result;
-
-      // Check if InfinitePay is available before trying to process payment
-      const isInfinitepayAvailable = typeof window !== 'undefined' && window.Infinitepay;
-
-      if (isInfinitepayAvailable) {
-        try {
-          const paymentResult = await executePayment(url);
-
-          if (paymentResult) {
-            // Check if transaction already exists to prevent duplicates
-            const { data: existingTransaction } = await supabase
-              .from('apoiadores')
-              .select('id')
-              .eq('transaction_nsu', paymentResult.transactionNsu)
-              .maybeSingle();
-
-            if (!existingTransaction) {
-              // Save supporter data only if transaction doesn't exist
-              await supabase
-                .from('apoiadores')
-                .insert({
-                  apoio_id: apoio.id,
-                  nome,
-                  email,
-                  valor: valorCentavos,
-                  transaction_nsu: paymentResult.transactionNsu
-                });
-            }
-
-            toast({
-              title: 'Apoio realizado!',
-              description: 'Obrigado por apoiar esta causa.',
-            });
-
-            // Close both dialogs
-            setDesktopDialogOpen(false);
-            setMobileDrawerOpen(false);
-
-            navigate('/apoio-sucesso');
-            return; // Exit the function after successful payment
-          }
-        } catch (paymentError) {
-          console.log('InfinitePay payment failed, falling back to checkout URL:', paymentError);
-        }
-      }
-
-      // Fallback: redirect to checkout URL if InfinitePay is not available or payment failed
-      console.log('Using checkout URL fallback');
-
-      toast({
-        title: 'Redirecionando para pagamento',
-        description: 'Você será redirecionado para completar o pagamento.',
-      });
-
-      // Open checkout URL in new tab/window
-      window.open(url, '_blank', 'noopener,noreferrer');
-    } catch (error) {
-      console.error('Erro ao processar apoio:', error);
-      toast({
-        title: 'Erro no pagamento',
-        description: 'Não foi possível processar seu apoio. Tente novamente.',
-        variant: 'destructive',
-      });
-    }
-  };
 
   const compartilhar = async () => {
     // Em mobile, tenta compartilhar nativamente
