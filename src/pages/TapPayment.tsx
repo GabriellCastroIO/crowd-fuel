@@ -40,7 +40,7 @@ export default function TapPayment() {
   const [tapPaymentLoading, setTapPaymentLoading] = useState(false);
   
   // Use the same hook as DetalhesApoio
-  const { user: currentUser } = useInfinitepayUser();
+  const { user: currentUser, loading: userLoading } = useInfinitepayUser();
   
   // Form state
   const [tapValor, setTapValor] = useState('');
@@ -96,6 +96,20 @@ export default function TapPayment() {
 
   useEffect(() => {
     if (!id) return;
+    if (userLoading) {
+      console.log('🔧 DEBUG TapPayment: User ainda carregando...');
+      return;
+    }
+    if (!currentUser) {
+      console.log('🔧 DEBUG TapPayment: Usuário não logado, redirecionando...');
+      toast({
+        title: 'Acesso negado',
+        description: 'Você precisa estar logado para acessar esta funcionalidade.',
+        variant: 'destructive',
+      });
+      navigate(`/apoio/${id}`);
+      return;
+    }
 
     const fetchApoio = async () => {
       try {
@@ -111,6 +125,13 @@ export default function TapPayment() {
         // Check if user is the owner (using the same logic as DetalhesApoio)
         const isOwner = currentUser && apoioData && 
           String(apoioData.user_id).trim() === String(currentUser.id).trim();
+
+        console.log('🔧 DEBUG TapPayment ownership check:', {
+          currentUser: currentUser ? { id: currentUser.id, name: currentUser.name } : null,
+          apoioData: apoioData ? { id: apoioData.id, user_id: apoioData.user_id, titulo: apoioData.titulo } : null,
+          isOwner,
+          stringComparison: currentUser && apoioData ? String(apoioData.user_id).trim() === String(currentUser.id).trim() : false
+        });
 
         if (!isOwner) {
           toast({
@@ -135,7 +156,7 @@ export default function TapPayment() {
     };
 
     fetchApoio();
-  }, [id, toast, navigate, currentUser]);
+  }, [id, toast, navigate, currentUser, userLoading]);
 
   const handleTapPayment = async () => {
     if (!apoio || !tapValor || !tapClientName) {
@@ -270,7 +291,7 @@ export default function TapPayment() {
     }
   };
 
-  if (loading) {
+  if (loading || userLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-pulse text-center">
@@ -448,6 +469,30 @@ export default function TapPayment() {
                   ? 'Processando...'
                   : `Cobrar R$ ${tapValor || '0,00'}`
                 }
+              </Button>
+
+              {/* Debug button */}
+              <Button
+                onClick={() => {
+                  console.log('🔧 DEBUG API Check:', {
+                    hasWindow: typeof window !== 'undefined',
+                    hasInfinitepay: !!window.Infinitepay,
+                    hasReceiveTapPayment: !!window.Infinitepay?.receiveTapPayment,
+                    typeOfReceiveTapPayment: typeof window.Infinitepay?.receiveTapPayment,
+                    windowKeys: typeof window !== 'undefined' ? Object.keys(window).filter(k => k.toLowerCase().includes('infinit')) : [],
+                    userAgent: navigator.userAgent
+                  });
+                  
+                  toast({
+                    title: 'Debug executado',
+                    description: 'Verifique o console para logs de debug',
+                  });
+                }}
+                variant="secondary"
+                size="sm"
+                className="w-full"
+              >
+                🔧 Debug API
               </Button>
             </div>
           </CardContent>

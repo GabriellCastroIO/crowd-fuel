@@ -115,6 +115,17 @@ export default function DetalhesApoio() {
   
   const canUseTapPayment = (isOwner && isTapPaymentAvailable) || 
     (forceTapForDebug && isTapPaymentAvailable);
+
+  // Debug específico para canUseTapPayment
+  console.log('🔧 DEBUG canUseTapPayment:', {
+    isOwner,
+    isTapPaymentAvailable,
+    forceTapForDebug,
+    canUseTapPayment,
+    currentUserId: currentUser?.id,
+    apoioUserId: apoio?.user_id,
+    stringComparison: currentUser && apoio ? String(apoio.user_id).trim() === String(currentUser.id).trim() : false
+  });
   
       // Debug logs para verificar por que o botão não aparece
   useEffect(() => {
