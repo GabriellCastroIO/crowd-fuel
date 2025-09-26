@@ -44,7 +44,7 @@ export default function EditarApoio() {
   // Utility functions for currency formatting
   const formatCurrency = (value: string): string => {
     // Remove all non-numeric characters
-    let numericValue = value.replace(/[^\d]/g, '');
+    const numericValue = value.replace(/[^\d]/g, '');
 
     // Don't allow empty or just zeros
     if (!numericValue || numericValue === '0' || numericValue === '00') {
