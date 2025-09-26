@@ -132,7 +132,9 @@ export default function DetalhesApoio() {
   
   // Check if current user is the campaign owner
   // Converte ambos para string para garantir comparação correta
-  const isOwner = currentUser && apoio && String(apoio.user_id) === String(currentUser.id);
+  // Também remove espaços em branco caso existam
+  const isOwner = currentUser && apoio && 
+    String(apoio.user_id).trim() === String(currentUser.id).trim();
   
   // Verifica se a função de tap payment está disponível
   // Se está disponível, significa que estamos no webview do app InfinitePay
@@ -141,7 +143,16 @@ export default function DetalhesApoio() {
     typeof window.Infinitepay.receiveTapPayment === 'function';
   
   // Apenas o dono da campanha pode usar o tap payment
-  const canUseTapPayment = isOwner && isTapPaymentAvailable;
+  // Debug: adicione ?forceTap=true na URL para testar
+  const urlParams = new URLSearchParams(window.location.search);
+  const forceTapForDebug = urlParams.get('forceTap') === 'true';
+  
+  if (forceTapForDebug && isTapPaymentAvailable) {
+    console.warn('⚠️ Tap payment forçado via URL param ?forceTap=true');
+  }
+  
+  const canUseTapPayment = (isOwner && isTapPaymentAvailable) || 
+    (forceTapForDebug && isTapPaymentAvailable);
   
       // Debug logs para verificar por que o botão não aparece
   useEffect(() => {
