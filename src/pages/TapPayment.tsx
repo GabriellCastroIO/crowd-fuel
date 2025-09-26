@@ -260,17 +260,13 @@ export default function TapPayment() {
             variant: 'destructive',
           });
         } else {
-          toast({
-            title: 'Pagamento processado!',
-            description: `Pagamento de R$ ${(valorCentavos / 100).toFixed(2).replace('.', ',')} processado com sucesso.`,
-          });
-
-          // Reset form
-          setTapValor('');
-          setTapClientName('');
-          setTapClientEmail('');
-          setTapPaymentMethod('debit');
-          setTapInstallments('1');
+          // Navigate to success page with payment details
+          const successUrl = new URL(`${window.location.origin}/apoio/${apoio.id}/tap-sucesso`);
+          successUrl.searchParams.set('valor', valorCentavos.toString());
+          successUrl.searchParams.set('clientName', tapClientName);
+          successUrl.searchParams.set('campaignTitle', apoio.titulo);
+          
+          navigate(successUrl.pathname + successUrl.search);
         }
       } else {
         toast({
@@ -471,29 +467,6 @@ export default function TapPayment() {
                 }
               </Button>
 
-              {/* Debug button */}
-              <Button
-                onClick={() => {
-                  console.log('🔧 DEBUG API Check:', {
-                    hasWindow: typeof window !== 'undefined',
-                    hasInfinitepay: !!window.Infinitepay,
-                    hasReceiveTapPayment: !!window.Infinitepay?.receiveTapPayment,
-                    typeOfReceiveTapPayment: typeof window.Infinitepay?.receiveTapPayment,
-                    windowKeys: typeof window !== 'undefined' ? Object.keys(window).filter(k => k.toLowerCase().includes('infinit')) : [],
-                    userAgent: navigator.userAgent
-                  });
-                  
-                  toast({
-                    title: 'Debug executado',
-                    description: 'Verifique o console para logs de debug',
-                  });
-                }}
-                variant="secondary"
-                size="sm"
-                className="w-full"
-              >
-                🔧 Debug API
-              </Button>
             </div>
           </CardContent>
         </Card>
