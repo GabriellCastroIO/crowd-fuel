@@ -647,7 +647,7 @@ export default function DetalhesApoio() {
           <Card className="mb-4 sm:mb-6">
             <CardContent className="p-0">
               <Tabs defaultValue="sobre" className="w-full">
-                <TabsList className="grid w-full grid-cols-3 h-12">
+                <TabsList className="grid w-full grid-cols-2 h-12">
                   <TabsTrigger value="sobre" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
                     <Info className="h-3 w-3 sm:h-4 sm:w-4" />
                     <span className="hidden sm:inline">Sobre</span>
