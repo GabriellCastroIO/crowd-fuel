@@ -933,12 +933,12 @@ export default function DetalhesApoio() {
                     </Button>
                   </DrawerTrigger>
                     
-                  <DrawerContent className="px-4 pb-6">
-                    <DrawerHeader>
+                  <DrawerContent className="px-4 pb-6 max-h-[80vh] overflow-y-auto">
+                    <DrawerHeader className="sticky top-0 bg-background z-10">
                       <DrawerTitle className="text-left">Apoiar: {apoio.titulo}</DrawerTitle>
                     </DrawerHeader>
                     
-                    <div className="space-y-4 mt-4">
+                    <div className="space-y-4 mt-4 pb-4">
                       <div>
                         <Label htmlFor="valor" className="text-sm">Valor do apoio (R$)</Label>
                         <Input
@@ -948,6 +948,10 @@ export default function DetalhesApoio() {
                           value={valor}
                           onChange={handleValorChange}
                           className="text-base"
+                          style={{ 
+                            WebkitAppearance: 'none',
+                            appearance: 'none'
+                          }}
                         />
                       </div>
 
@@ -960,6 +964,10 @@ export default function DetalhesApoio() {
                           onChange={handleNomeChange}
                           maxLength={20}
                           className="text-base"
+                          style={{ 
+                            WebkitAppearance: 'none',
+                            appearance: 'none'
+                          }}
                         />
                       </div>
                         
@@ -972,6 +980,10 @@ export default function DetalhesApoio() {
                           value={email}
                           onChange={handleEmailChange}
                           className="text-base"
+                          style={{ 
+                            WebkitAppearance: 'none',
+                            appearance: 'none'
+                          }}
                         />
                       </div>
 
