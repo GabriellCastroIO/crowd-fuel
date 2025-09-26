@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -24,6 +24,13 @@ export default function CriarApoio() {
   const [metaValor, setMetaValor] = useState('');
   const [imagemUrl, setImagemUrl] = useState('');
   const [handleInfinitepay, setHandleInfinitepay] = useState('');
+
+  // Set handle when user data loads
+  useEffect(() => {
+    if (user?.handle && !handleInfinitepay) {
+      setHandleInfinitepay(user.handle);
+    }
+  }, [user, handleInfinitepay]);
 
   // Utility functions for currency formatting
   const formatCurrency = (value: string): string => {
@@ -86,14 +93,6 @@ export default function CriarApoio() {
     }
   };
 
-  const handleInfinitepayChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const input = e.target.value;
-    // Allow letters, numbers, underscores, hyphens, max 50 characters
-    const validChars = input.replace(/[^a-zA-Z0-9_-]/g, '');
-    if (validChars.length <= 50) {
-      setHandleInfinitepay(validChars);
-    }
-  };
 
   const isValidImageUrl = (url: string): boolean => {
     try {
@@ -145,15 +144,7 @@ export default function CriarApoio() {
       return;
     }
 
-    // Validate handle length
-    if (handleInfinitepay.length < 3) {
-      toast({
-        title: 'Handle inválido',
-        description: 'O handle deve ter pelo menos 3 caracteres.',
-        variant: 'destructive',
-      });
-      return;
-    }
+    // Handle is automatically set from user data, no validation needed
 
     const metaValorCentavos = parseValueToCents(metaValor);
 
@@ -354,11 +345,11 @@ export default function CriarApoio() {
                   <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground font-medium">$</span>
                   <Input
                     id="handleInfinitepay"
-                    placeholder="seu_handle"
+                    placeholder={user?.handle || "Carregando..."}
                     value={handleInfinitepay}
-                    onChange={handleInfinitepayChange}
-                    className="pl-8 text-sm sm:text-base"
-                    maxLength={50}
+                    readOnly
+                    disabled
+                    className="pl-8 text-sm sm:text-base bg-muted cursor-not-allowed"
                   />
                 </div>
                 <p className="text-xs sm:text-sm text-muted-foreground mt-1">
