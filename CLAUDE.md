@@ -216,6 +216,12 @@ interface Window {
 5. **Save Transaction** - Store supporter data in database
 6. **Show Success** - Redirect to success page
 
+### Tap Payment (In-Person)
+- **Detection**: Check if `window.Infinitepay.receiveTapPayment` exists to confirm webview
+- **Usage**: Only available for campaign owners when in InfinitePay app webview
+- **Function**: `receiveTapPayment()` handles in-person card tap payments
+- **Parameters**: Amount, client name, payment method (credit/debit), installments
+
 ### Checkout URL (Production)
 ```
 https://tuiwratkqezsiweocbpu.supabase.co/functions/v1/create-checkout

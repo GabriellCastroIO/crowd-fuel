@@ -132,9 +132,67 @@ export default function DetalhesApoio() {
   
   // Check if current user is the campaign owner
   const isOwner = currentUser && apoio && apoio.user_id === currentUser.id;
-  const canUseTapPayment = isOwner && isWebView && isMobile && isInfinitepayAvailable;
+  
+  // Verifica se a função de tap payment está disponível
+  // Se está disponível, significa que estamos no webview do app InfinitePay
+  const isTapPaymentAvailable = isInfinitepayAvailable && 
+    window.Infinitepay && 
+    typeof window.Infinitepay.receiveTapPayment === 'function';
+  
+  // Apenas o dono da campanha pode usar o tap payment
+  const canUseTapPayment = isOwner && isTapPaymentAvailable;
+  
+      // Debug logs para verificar por que o botão não aparece
+  useEffect(() => {
+    // Log direto do window.Infinitepay
+    console.log('🚀 window.Infinitepay:', window.Infinitepay);
+    console.log('🚀 typeof window:', typeof window);
+    console.log('🚀 window keys:', typeof window !== 'undefined' ? Object.keys(window).filter(k => k.toLowerCase().includes('infinit')) : 'window não disponível');
+    
+    console.log('🔍 Debug Tap Payment:', {
+        user: currentUser ? {
+          id: currentUser?.id,
+          name: currentUser?.name,
+          handle: currentUser?.handle,
+        } : 'Não logado',
+        campaign: apoio ? {
+          id: apoio?.id,
+          user_id: apoio?.user_id,
+          titulo: apoio?.titulo,
+        } : 'Carregando...',
+        conditions: {
+          isOwner: isOwner,
+          isInfinitepayAvailable: isInfinitepayAvailable,
+          isTapPaymentAvailable: isTapPaymentAvailable,
+          canUseTapPayment: canUseTapPayment,
+        },
+        infinitepayAPI: {
+          hasWindow: typeof window !== 'undefined',
+          hasInfinitepay: window.Infinitepay !== undefined,
+          hasReceiveTapPayment: window.Infinitepay?.receiveTapPayment !== undefined,
+          typeOfReceiveTapPayment: typeof window.Infinitepay?.receiveTapPayment,
+        },
+        environment: {
+          userAgent: navigator.userAgent,
+          isWebView: isWebView,
+          isMobile: isMobile,
+      }
+    });
+  }, [currentUser, apoio, isOwner, isInfinitepayAvailable, isTapPaymentAvailable, canUseTapPayment, isWebView, isMobile]);
   
   const handleTapPayment = async () => {
+    // Verificar se a API está disponível antes de prosseguir
+    if (!window.Infinitepay || typeof window.Infinitepay.receiveTapPayment !== 'function') {
+      toast({
+        title: 'API não disponível',
+        description: 'A função de pagamento por tap não está disponível. Certifique-se de estar usando o app InfinitePay.',
+        variant: 'destructive',
+      });
+      console.error('window.Infinitepay.receiveTapPayment não está disponível');
+      console.log('window.Infinitepay:', window.Infinitepay);
+      return;
+    }
+    
     if (!tapValor || !tapClientName) {
       toast({
         title: 'Campos obrigatórios',
@@ -172,11 +230,11 @@ export default function DetalhesApoio() {
     try {
       const orderNsu = `TAP_${Date.now()}`;
       
-      const paymentResult = await executeTapPayment({
+      console.log('Executando tap payment com window.Infinitepay.receiveTapPayment:', {
         amount: valorCentavos,
         orderNsu: orderNsu,
         installments: tapPaymentMethod === 'debit' ? 1 : parseInt(tapInstallments),
-        paymentMethod: tapPaymentMethod,
+        paymentMethod: tapPaymentMethod === 'credit' ? PaymentMethod.CREDIT : PaymentMethod.DEBIT,
       });
       
       if (paymentResult) {
@@ -247,6 +305,8 @@ export default function DetalhesApoio() {
             setApoiadores(newApoiadores);
           }
         }
+      } else {
+        throw new Error(response.message || 'Pagamento falhou');
       }
     } catch (error) {
       console.error('Erro no pagamento por tap:', error);
@@ -623,7 +683,7 @@ export default function DetalhesApoio() {
 
                 {/* Support Button - Desktop */}
                 <div className="mt-auto space-y-3">
-                  {/* Owner Tap Payment Button - Only in WebView */}
+                  {/* Tap Payment Button - Only for campaign owner */}
                   {canUseTapPayment && (
                     <Button
                       className="w-full"
@@ -704,7 +764,7 @@ export default function DetalhesApoio() {
                   </DialogContent>
                 </Dialog>
                 
-                {/* Tap Payment Modal */}
+                {/* Tap Payment Modal - Only for campaign owner */}
                 {canUseTapPayment && (
                   <Drawer open={tapPaymentOpen} onOpenChange={setTapPaymentOpen}>
                     <DrawerContent className="px-4 pb-6">
@@ -890,25 +950,40 @@ export default function DetalhesApoio() {
                   </div>
                 )}
 
-                {/* Support Button - Mobile */}
-                <Drawer open={mobileDrawerOpen} onOpenChange={setMobileDrawerOpen}>
-                  <DrawerTrigger asChild>
+                {/* Support Buttons - Mobile */}
+                <div className="space-y-3">
+                  {/* Tap Payment Button - Only for campaign owner */}
+                  {canUseTapPayment && (
                     <Button
                       className="w-full"
                       size="default"
-                      disabled={campanhaFinalizada}
+                      variant="outline"
+                      onClick={() => setTapPaymentOpen(true)}
                     >
-                      <Heart className="h-4 w-4 mr-2" />
-                      {campanhaFinalizada ? 'Meta atingida!' : 'Apoiar agora'}
+                      <CreditCard className="h-4 w-4 mr-2" />
+                      Cobrar por Tap (Presencial)
                     </Button>
-                  </DrawerTrigger>
+                  )}
+                  
+                  {/* Regular Support Button */}
+                  <Drawer open={mobileDrawerOpen} onOpenChange={setMobileDrawerOpen}>
+                    <DrawerTrigger asChild>
+                      <Button
+                        className="w-full"
+                        size="default"
+                        disabled={campanhaFinalizada}
+                      >
+                        <Heart className="h-4 w-4 mr-2" />
+                        {campanhaFinalizada ? 'Meta atingida!' : 'Apoiar agora'}
+                      </Button>
+                    </DrawerTrigger>
                     
-                  <DrawerContent className="px-4 pb-6">
-                    <DrawerHeader>
+                  <DrawerContent className="px-4 pb-6 max-h-[80vh] overflow-y-auto">
+                    <DrawerHeader className="sticky top-0 bg-background z-10">
                       <DrawerTitle className="text-left">Apoiar: {apoio.titulo}</DrawerTitle>
                     </DrawerHeader>
                     
-                    <div className="space-y-4 mt-4">
+                    <div className="space-y-4 mt-4 pb-4">
                       <div>
                         <Label htmlFor="valor" className="text-sm">Valor do apoio (R$)</Label>
                         <Input
@@ -918,6 +993,10 @@ export default function DetalhesApoio() {
                           value={valor}
                           onChange={handleValorChange}
                           className="text-base"
+                          style={{ 
+                            WebkitAppearance: 'none',
+                            appearance: 'none'
+                          }}
                         />
                       </div>
 
@@ -930,6 +1009,10 @@ export default function DetalhesApoio() {
                           onChange={handleNomeChange}
                           maxLength={20}
                           className="text-base"
+                          style={{ 
+                            WebkitAppearance: 'none',
+                            appearance: 'none'
+                          }}
                         />
                       </div>
                         
@@ -942,6 +1025,10 @@ export default function DetalhesApoio() {
                           value={email}
                           onChange={handleEmailChange}
                           className="text-base"
+                          style={{ 
+                            WebkitAppearance: 'none',
+                            appearance: 'none'
+                          }}
                         />
                       </div>
 
@@ -961,6 +1048,7 @@ export default function DetalhesApoio() {
                     </div>
                   </DrawerContent>
                 </Drawer>
+                </div>
               </CardContent>
             </Card>
           </div>
