@@ -131,7 +131,8 @@ export default function DetalhesApoio() {
   };
   
   // Check if current user is the campaign owner
-  const isOwner = currentUser && apoio && apoio.user_id === currentUser.id;
+  // Converte ambos para string para garantir comparação correta
+  const isOwner = currentUser && apoio && String(apoio.user_id) === String(currentUser.id);
   
   // Verifica se a função de tap payment está disponível
   // Se está disponível, significa que estamos no webview do app InfinitePay
@@ -149,15 +150,30 @@ export default function DetalhesApoio() {
     console.log('🚀 typeof window:', typeof window);
     console.log('🚀 window keys:', typeof window !== 'undefined' ? Object.keys(window).filter(k => k.toLowerCase().includes('infinit')) : 'window não disponível');
     
+    // Log detalhado dos IDs para debug de tipos
+    if (currentUser && apoio) {
+      console.log('🔑 ID Comparison Debug:', {
+        currentUserId: currentUser.id,
+        currentUserIdType: typeof currentUser.id,
+        apoioUserId: apoio.user_id,
+        apoioUserIdType: typeof apoio.user_id,
+        directComparison: apoio.user_id === currentUser.id,
+        stringComparison: String(apoio.user_id) === String(currentUser.id),
+        isOwner: isOwner
+      });
+    }
+    
     console.log('🔍 Debug Tap Payment:', {
         user: currentUser ? {
           id: currentUser?.id,
+          idType: typeof currentUser?.id,
           name: currentUser?.name,
           handle: currentUser?.handle,
         } : 'Não logado',
         campaign: apoio ? {
           id: apoio?.id,
           user_id: apoio?.user_id,
+          userIdType: typeof apoio?.user_id,
           titulo: apoio?.titulo,
         } : 'Carregando...',
         conditions: {
