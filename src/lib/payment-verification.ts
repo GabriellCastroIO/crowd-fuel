@@ -21,20 +21,35 @@ export async function verifyPayment(
   slug: string
 ): Promise<PaymentVerificationResponse> {
   try {
-    const { data, error } = await supabase.functions.invoke('verify-payment', {
-      body: {
-        handle,
-        transaction_nsu: transactionNsu,
-        external_order_nsu: externalOrderNsu,
-        slug
-      }
+    // Call InfinitePay API directly from frontend
+    const url = `https://api.infinitepay.io/invoices/public/checkout/payment_check/${handle}`;
+    const params = new URLSearchParams({
+      transaction_nsu: transactionNsu,
+      external_order_nsu: externalOrderNsu,
+      slug
     });
 
-    if (error) {
-      throw error;
+    console.log('Verifying payment with InfinitePay:', { handle, transactionNsu, externalOrderNsu, slug });
+
+    const response = await fetch(`${url}?${params}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      console.error('InfinitePay API error:', response.status, response.statusText);
+      return {
+        success: false,
+        paid: false
+      };
     }
 
-    return data as PaymentVerificationResponse;
+    const verificationResult: PaymentVerificationResponse = await response.json();
+    console.log('Payment verification result:', verificationResult);
+
+    return verificationResult;
   } catch (error) {
     console.error('Payment verification error:', error);
     return {
