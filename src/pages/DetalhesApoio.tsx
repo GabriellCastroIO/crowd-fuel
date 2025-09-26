@@ -132,7 +132,49 @@ export default function DetalhesApoio() {
   
   // Check if current user is the campaign owner
   const isOwner = currentUser && apoio && apoio.user_id === currentUser.id;
-  const canUseTapPayment = isOwner && isWebView && isMobile && isInfinitepayAvailable;
+  
+  // Verifica se a função de tap payment está disponível
+  // Se está disponível, significa que estamos no webview do app InfinitePay
+  const isTapPaymentAvailable = isInfinitepayAvailable && 
+    window.Infinitepay && 
+    typeof window.Infinitepay.receiveTapPayment === 'function';
+  
+  const canUseTapPayment = isOwner && isTapPaymentAvailable;
+  
+  // Debug logs para verificar por que o botão não aparece
+  useEffect(() => {
+    if (apoio && currentUser) {
+      console.log('🔍 Debug Tap Payment:', {
+        user: {
+          id: currentUser?.id,
+          name: currentUser?.name,
+          handle: currentUser?.handle,
+        },
+        campaign: {
+          id: apoio?.id,
+          user_id: apoio?.user_id,
+          titulo: apoio?.titulo,
+        },
+        conditions: {
+          isOwner: isOwner,
+          isInfinitepayAvailable: isInfinitepayAvailable,
+          isTapPaymentAvailable: isTapPaymentAvailable,
+          canUseTapPayment: canUseTapPayment,
+        },
+        infinitepayAPI: {
+          hasWindow: typeof window !== 'undefined',
+          hasInfinitepay: window.Infinitepay !== undefined,
+          hasReceiveTapPayment: window.Infinitepay?.receiveTapPayment !== undefined,
+          typeOfReceiveTapPayment: typeof window.Infinitepay?.receiveTapPayment,
+        },
+        environment: {
+          userAgent: navigator.userAgent,
+          isWebView: isWebView,
+          isMobile: isMobile,
+        }
+      });
+    }
+  }, [currentUser, apoio, isOwner, isInfinitepayAvailable, isTapPaymentAvailable, canUseTapPayment, isWebView, isMobile]);
   
   const handleTapPayment = async () => {
     if (!tapValor || !tapClientName) {
