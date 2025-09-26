@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import DetalhesApoio from "./pages/DetalhesApoio";
 import ApoiarApoio from "./pages/ApoiarApoio";
+import TapPayment from "./pages/TapPayment";
 import CriarApoio from "./pages/CriarApoio";
 import EditarApoio from "./pages/EditarApoio";
 import MeusApoios from "./pages/MeusApoios";
@@ -24,6 +25,7 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/apoio/:id" element={<DetalhesApoio />} />
           <Route path="/apoio/:id/apoiar" element={<ApoiarApoio />} />
+          <Route path="/apoio/:id/tap-payment" element={<TapPayment />} />
           <Route path="/criar-apoio" element={<CriarApoio />} />
           <Route path="/editar-apoio/:id" element={<EditarApoio />} />
           <Route path="/meus-apoios" element={<MeusApoios />} />
