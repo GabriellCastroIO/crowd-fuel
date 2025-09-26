@@ -766,7 +766,7 @@ export default function DetalhesApoio() {
               </CardHeader>
               <CardContent className="space-y-4 sm:space-y-6 p-4 sm:p-6 pt-0 sm:pt-0">
                 {/* Progress */}
-                <div className="space-y-2 sm:space-y-3">
+                <div className="space-y-2">
                   <div className="flex justify-between text-xs sm:text-sm">
                     <span className="font-medium">
                       R$ {valorAtualReais.toLocaleString('pt-BR', { minimumFractionDigits: isMobile ? 0 : 2 })}
