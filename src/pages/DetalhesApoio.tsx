@@ -180,16 +180,28 @@ export default function DetalhesApoio() {
       });
       
       if (paymentResult) {
-        // Save tap payment to database
-        const { error: saveError } = await supabase
+        // Check if transaction already exists to prevent duplicates
+        const { data: existingTransaction } = await supabase
           .from('apoiadores')
-          .insert({
-            apoio_id: apoio!.id,
-            nome: tapClientName,
-            email: tapClientEmail || 'tap@payment.local',
-            valor: valorCentavos,
-            transaction_nsu: paymentResult.transactionNsu,
-          });
+          .select('id')
+          .eq('transaction_nsu', paymentResult.transactionNsu)
+          .maybeSingle();
+
+        let saveError = null;
+
+        if (!existingTransaction) {
+          // Save tap payment to database only if transaction doesn't exist
+          const { error } = await supabase
+            .from('apoiadores')
+            .insert({
+              apoio_id: apoio!.id,
+              nome: tapClientName,
+              email: tapClientEmail || 'tap@payment.local',
+              valor: valorCentavos,
+              transaction_nsu: paymentResult.transactionNsu,
+            });
+          saveError = error;
+        }
         
         if (saveError) {
           console.error('Erro ao salvar pagamento:', saveError);

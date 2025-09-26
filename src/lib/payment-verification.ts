@@ -19,16 +19,19 @@ export async function verifyPayment(
   externalOrderNsu: string,
   slug: string
 ): Promise<PaymentVerificationResponse> {
-  const url = `https://api.infinitepay.io/invoices/public/checkout/payment_check/${handle}`;
-
-  const params = new URLSearchParams({
-    transaction_nsu: transactionNsu,
-    external_order_nsu: externalOrderNsu,
-    slug: slug
-  });
-
   try {
-    const response = await fetch(`${url}?${params}`);
+    const response = await fetch('https://tuiwratkqezsiweocbpu.supabase.co/functions/v1/verify-payment', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        handle,
+        transaction_nsu: transactionNsu,
+        external_order_nsu: externalOrderNsu,
+        slug
+      })
+    });
 
     if (!response.ok) {
       throw new Error(`Payment verification failed: ${response.status}`);
