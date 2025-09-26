@@ -139,22 +139,23 @@ export default function DetalhesApoio() {
     window.Infinitepay && 
     typeof window.Infinitepay.receiveTapPayment === 'function';
   
-  const canUseTapPayment = isOwner && isTapPaymentAvailable;
+  // TEMPORÁRIO: Liberado para todos testarem
+  // TODO: Depois dos testes, voltar para: const canUseTapPayment = isOwner && isTapPaymentAvailable;
+  const canUseTapPayment = isTapPaymentAvailable;
   
-  // Debug logs para verificar por que o botão não aparece
+      // Debug logs para verificar por que o botão não aparece
   useEffect(() => {
-    if (apoio && currentUser) {
-      console.log('🔍 Debug Tap Payment:', {
-        user: {
+    console.log('🔍 Debug Tap Payment (MODO TESTE - Liberado para todos):', {
+        user: currentUser ? {
           id: currentUser?.id,
           name: currentUser?.name,
           handle: currentUser?.handle,
-        },
-        campaign: {
+        } : 'Não logado',
+        campaign: apoio ? {
           id: apoio?.id,
           user_id: apoio?.user_id,
           titulo: apoio?.titulo,
-        },
+        } : 'Carregando...',
         conditions: {
           isOwner: isOwner,
           isInfinitepayAvailable: isInfinitepayAvailable,
@@ -171,9 +172,8 @@ export default function DetalhesApoio() {
           userAgent: navigator.userAgent,
           isWebView: isWebView,
           isMobile: isMobile,
-        }
-      });
-    }
+      }
+    });
   }, [currentUser, apoio, isOwner, isInfinitepayAvailable, isTapPaymentAvailable, canUseTapPayment, isWebView, isMobile]);
   
   const handleTapPayment = async () => {
@@ -653,7 +653,7 @@ export default function DetalhesApoio() {
 
                 {/* Support Button - Desktop */}
                 <div className="mt-auto space-y-3">
-                  {/* Owner Tap Payment Button - Only in WebView */}
+                  {/* Tap Payment Button - TEMPORÁRIO: Liberado para todos testarem */}
                   {canUseTapPayment && (
                     <Button
                       className="w-full"
