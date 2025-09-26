@@ -69,8 +69,8 @@ export default function Home() {
             </div>
             
             {isMobile ? (
-              // Only show menu if there are options available
-              (isInfinitepayAvailable || user) && (
+              // Only show menu if InfinitePay is available
+              isInfinitepayAvailable && (
                 <Sheet>
                   <SheetTrigger asChild>
                     <Button variant="ghost" size="icon">
@@ -105,22 +105,22 @@ export default function Home() {
                 </Sheet>
               )
             ) : (
-              <div className="flex items-center gap-4">
-                {user && (
-                  <Button
-                    variant="outline"
-                    onClick={() => navigate('/meus-apoios')}
-                  >
-                    Meus Apoios
-                  </Button>
-                )}
-                {isInfinitepayAvailable && (
+              isInfinitepayAvailable && (
+                <div className="flex items-center gap-4">
+                  {user && (
+                    <Button
+                      variant="outline"
+                      onClick={() => navigate('/meus-apoios')}
+                    >
+                      Meus Apoios
+                    </Button>
+                  )}
                   <Button onClick={() => navigate('/criar-apoio')}>
                     <Plus className="h-4 w-4 mr-2" />
                     Criar Apoio
                   </Button>
-                )}
-              </div>
+                </div>
+              )
             )}
           </div>
         </div>
