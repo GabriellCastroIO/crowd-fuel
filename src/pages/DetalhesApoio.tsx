@@ -949,18 +949,31 @@ export default function DetalhesApoio() {
                   </div>
                 )}
 
-                {/* Support Button - Mobile */}
-                <Drawer open={mobileDrawerOpen} onOpenChange={setMobileDrawerOpen}>
-                  <DrawerTrigger asChild>
-                    <Button
-                      className="w-full"
-                      size="default"
-                      disabled={campanhaFinalizada}
-                    >
-                      <Heart className="h-4 w-4 mr-2" />
-                      {campanhaFinalizada ? 'Meta atingida!' : 'Apoiar agora'}
-                    </Button>
-                  </DrawerTrigger>
+                {/* Support Buttons - Mobile */}
+                <div className="space-y-3">
+                  {/* Tap Payment Button - FORÇADO PARA TESTES */}
+                  <Button
+                    className="w-full"
+                    size="default"
+                    variant="outline"
+                    onClick={() => setTapPaymentOpen(true)}
+                  >
+                    <CreditCard className="h-4 w-4 mr-2" />
+                    Cobrar por Tap (Presencial)
+                  </Button>
+                  
+                  {/* Regular Support Button */}
+                  <Drawer open={mobileDrawerOpen} onOpenChange={setMobileDrawerOpen}>
+                    <DrawerTrigger asChild>
+                      <Button
+                        className="w-full"
+                        size="default"
+                        disabled={campanhaFinalizada}
+                      >
+                        <Heart className="h-4 w-4 mr-2" />
+                        {campanhaFinalizada ? 'Meta atingida!' : 'Apoiar agora'}
+                      </Button>
+                    </DrawerTrigger>
                     
                   <DrawerContent className="px-4 pb-6 max-h-[80vh] overflow-y-auto">
                     <DrawerHeader className="sticky top-0 bg-background z-10">
@@ -1032,6 +1045,7 @@ export default function DetalhesApoio() {
                     </div>
                   </DrawerContent>
                 </Drawer>
+                </div>
               </CardContent>
             </Card>
           </div>
