@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import DetalhesApoio from "./pages/DetalhesApoio";
+import ApoiarApoio from "./pages/ApoiarApoio";
 import CriarApoio from "./pages/CriarApoio";
 import EditarApoio from "./pages/EditarApoio";
 import MeusApoios from "./pages/MeusApoios";
@@ -22,6 +23,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/apoio/:id" element={<DetalhesApoio />} />
+          <Route path="/apoio/:id/apoiar" element={<ApoiarApoio />} />
           <Route path="/criar-apoio" element={<CriarApoio />} />
           <Route path="/editar-apoio/:id" element={<EditarApoio />} />
           <Route path="/meus-apoios" element={<MeusApoios />} />
