@@ -28,11 +28,24 @@ export interface PaymentData {
   receiptUrl?: string;
 }
 
+export enum PaymentMethod {
+  CREDIT = 'credit',
+  DEBIT = 'debit'
+}
+
 export interface TapPaymentParams {
   amount: number;
   orderNsu: string;
   installments: number;
-  paymentMethod: 'credit' | 'debit';
+  paymentMethod: PaymentMethod | 'credit' | 'debit';
+}
+
+export interface TapPaymentData {
+  amount: number;
+  installments: number;
+  paymentMethod: string;
+  transactionNsu: string;
+  orderNsu: string;
 }
 
 // Wait for InfinitePay API injection
@@ -71,6 +84,19 @@ export const processCheckoutPayment = async (checkoutUrl: string): Promise<Payme
   
   if (response.status === 'success' && response.data) {
     return response.data;
+  } else {
+    throw new Error(response.message || 'Payment failed');
+  }
+};
+
+// Process tap payment (in-person card payment)
+export const processTapPayment = async (params: TapPaymentParams): Promise<TapPaymentData> => {
+  await waitForInfinitepay();
+  
+  const response = await window.Infinitepay!.receiveTapPayment(params);
+  
+  if (response.status === 'success' && response.data) {
+    return response.data as TapPaymentData;
   } else {
     throw new Error(response.message || 'Payment failed');
   }

@@ -9,10 +9,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
-import { Share2, Heart, ArrowLeft, Calendar, User, Info, Gift } from 'lucide-react';
+import { Share2, Heart, ArrowLeft, Calendar, User, Info, Gift, CreditCard } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useCheckoutPayment } from '@/hooks/useInfinitepay';
-import { useIsMobile, useDeviceInfo } from '@/hooks/use-mobile';
+import { useCheckoutPayment, useInfinitepayUser, useTapPayment, useInfinitepayAvailability } from '@/hooks/useInfinitepay';
+import { useIsMobile, useDeviceInfo, useIsWebView } from '@/hooks/use-mobile';
+import { PaymentMethod } from '@/lib/infinitepay';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface Apoio {
   id: string;
@@ -25,6 +27,7 @@ interface Apoio {
   handle_infinitepay: string;
   created_at: string;
   status?: string;
+  user_id?: string;
 }
 
 interface Apoiador {
@@ -39,7 +42,11 @@ export default function DetalhesApoio() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { executePayment, loading: paymentLoading } = useCheckoutPayment();
+  const { executeTapPayment, loading: tapPaymentLoading } = useTapPayment();
+  const { user: currentUser } = useInfinitepayUser();
+  const { isAvailable: isInfinitepayAvailable } = useInfinitepayAvailability();
   const isMobile = useIsMobile();
+  const isWebView = useIsWebView();
   const { isIOS, isAndroid } = useDeviceInfo();
   
   const [apoio, setApoio] = useState<Apoio | null>(null);
@@ -47,11 +54,19 @@ export default function DetalhesApoio() {
   const [loading, setLoading] = useState(true);
   const [desktopDialogOpen, setDesktopDialogOpen] = useState(false);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+  const [tapPaymentOpen, setTapPaymentOpen] = useState(false);
   
   // Form state
   const [valor, setValor] = useState('');
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
+  
+  // Tap payment form state
+  const [tapValor, setTapValor] = useState('');
+  const [tapInstallments, setTapInstallments] = useState('1');
+  const [tapPaymentMethod, setTapPaymentMethod] = useState<'credit' | 'debit'>('debit');
+  const [tapClientName, setTapClientName] = useState('');
+  const [tapClientEmail, setTapClientEmail] = useState('');
 
   // Utility functions for currency formatting
   const formatCurrency = (value: string): string => {
@@ -103,6 +118,131 @@ export default function DetalhesApoio() {
     // Allow ALL characters for email, max 100 characters
     if (input.length <= 100) {
       setEmail(input);
+    }
+  };
+  
+  const handleTapValorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const input = e.target.value;
+    const numericOnly = input.replace(/[^\d]/g, '');
+    if (numericOnly.length <= 8) { // Limit to R$ 999999,99
+      const formattedValue = formatCurrency(numericOnly);
+      setTapValor(formattedValue);
+    }
+  };
+  
+  // Check if current user is the campaign owner
+  const isOwner = currentUser && apoio && apoio.user_id === currentUser.id;
+  const canUseTapPayment = isOwner && isWebView && isMobile && isInfinitepayAvailable;
+  
+  const handleTapPayment = async () => {
+    if (!tapValor || !tapClientName) {
+      toast({
+        title: 'Campos obrigatórios',
+        description: 'Preencha o valor e nome do cliente.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    const valorCentavos = parseValueToCents(tapValor);
+    
+    if (valorCentavos < 100) { // Minimum R$ 1,00
+      toast({
+        title: 'Valor inválido',
+        description: 'O valor mínimo é R$ 1,00.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    // Validate installments for credit card
+    if (tapPaymentMethod === 'credit') {
+      const installmentNum = parseInt(tapInstallments);
+      const minPerInstallment = valorCentavos / installmentNum;
+      if (minPerInstallment < 100) { // Min R$ 1,00 per installment
+        toast({
+          title: 'Parcelas inválidas',
+          description: 'O valor mínimo por parcela é R$ 1,00.',
+          variant: 'destructive',
+        });
+        return;
+      }
+    }
+    
+    try {
+      const orderNsu = `TAP_${Date.now()}`;
+      
+      const paymentResult = await executeTapPayment({
+        amount: valorCentavos,
+        orderNsu: orderNsu,
+        installments: tapPaymentMethod === 'debit' ? 1 : parseInt(tapInstallments),
+        paymentMethod: tapPaymentMethod,
+      });
+      
+      if (paymentResult) {
+        // Save tap payment to database
+        const { error: saveError } = await supabase
+          .from('apoiadores')
+          .insert({
+            apoio_id: apoio!.id,
+            nome: tapClientName,
+            email: tapClientEmail || 'tap@payment.local',
+            valor: valorCentavos,
+            transaction_nsu: paymentResult.transactionNsu,
+          });
+        
+        if (saveError) {
+          console.error('Erro ao salvar pagamento:', saveError);
+          toast({
+            title: 'Aviso',
+            description: 'Pagamento processado mas houve erro ao salvar. Entre em contato com suporte.',
+            variant: 'destructive',
+          });
+        } else {
+          // Update campaign current amount
+          const { error: updateError } = await supabase
+            .from('apoios')
+            .update({ 
+              valor_atual: (apoio!.valor_atual || 0) + valorCentavos 
+            })
+            .eq('id', apoio!.id);
+          
+          if (!updateError) {
+            setApoio(prev => prev ? {...prev, valor_atual: prev.valor_atual + valorCentavos} : null);
+          }
+          
+          toast({
+            title: 'Pagamento realizado!',
+            description: `Recebido R$ ${(valorCentavos / 100).toFixed(2).replace('.', ',')} de ${tapClientName}`,
+          });
+          
+          // Reset form
+          setTapPaymentOpen(false);
+          setTapValor('');
+          setTapClientName('');
+          setTapClientEmail('');
+          setTapInstallments('1');
+          setTapPaymentMethod('debit');
+          
+          // Reload supporters list
+          const { data: newApoiadores } = await supabase
+            .from('apoiadores')
+            .select('*')
+            .eq('apoio_id', apoio!.id)
+            .order('created_at', { ascending: false });
+          
+          if (newApoiadores) {
+            setApoiadores(newApoiadores);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Erro no pagamento por tap:', error);
+      toast({
+        title: 'Erro no pagamento',
+        description: error instanceof Error ? error.message : 'Não foi possível processar o pagamento.',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -470,7 +610,20 @@ export default function DetalhesApoio() {
                 </div>
 
                 {/* Support Button - Desktop */}
-                <div className="mt-auto">
+                <div className="mt-auto space-y-3">
+                  {/* Owner Tap Payment Button - Only in WebView */}
+                  {canUseTapPayment && (
+                    <Button
+                      className="w-full"
+                      size="lg"
+                      variant="outline"
+                      onClick={() => setTapPaymentOpen(true)}
+                    >
+                      <CreditCard className="h-4 w-4 mr-2" />
+                      Cobrar por Tap (Presencial)
+                    </Button>
+                  )}
+                  
                   <Dialog open={desktopDialogOpen} onOpenChange={setDesktopDialogOpen}>
                     <DialogTrigger asChild>
                       <Button
@@ -538,6 +691,126 @@ export default function DetalhesApoio() {
                     </div>
                   </DialogContent>
                 </Dialog>
+                
+                {/* Tap Payment Modal */}
+                {canUseTapPayment && (
+                  <Drawer open={tapPaymentOpen} onOpenChange={setTapPaymentOpen}>
+                    <DrawerContent className="px-4 pb-6">
+                      <DrawerHeader>
+                        <DrawerTitle className="text-left">Cobrar por Tap - Pagamento Presencial</DrawerTitle>
+                      </DrawerHeader>
+                      
+                      <div className="space-y-4 mt-4">
+                        {/* Payment Method */}
+                        <div>
+                          <Label>Método de Pagamento</Label>
+                          <Select value={tapPaymentMethod} onValueChange={(value: 'credit' | 'debit') => setTapPaymentMethod(value)}>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="debit">Débito</SelectItem>
+                              <SelectItem value="credit">Crédito</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        
+                        {/* Installments (only for credit) */}
+                        {tapPaymentMethod === 'credit' && (
+                          <div>
+                            <Label>Parcelas</Label>
+                            <Select value={tapInstallments} onValueChange={setTapInstallments}>
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(num => (
+                                  <SelectItem key={num} value={num.toString()}>
+                                    {num}x
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Mínimo R$ 1,00 por parcela
+                            </p>
+                          </div>
+                        )}
+                        
+                        {/* Amount */}
+                        <div>
+                          <Label htmlFor="tap-valor">Valor (R$)</Label>
+                          <Input
+                            id="tap-valor"
+                            type="text"
+                            placeholder="Digite o valor (ex: 10,50)"
+                            value={tapValor}
+                            onChange={handleTapValorChange}
+                            className="text-base"
+                          />
+                        </div>
+                        
+                        {/* Client Name */}
+                        <div>
+                          <Label htmlFor="tap-nome">Nome do Cliente</Label>
+                          <Input
+                            id="tap-nome"
+                            placeholder="Nome do cliente"
+                            value={tapClientName}
+                            onChange={(e) => setTapClientName(e.target.value)}
+                            maxLength={50}
+                            className="text-base"
+                          />
+                        </div>
+                        
+                        {/* Client Email (optional) */}
+                        <div>
+                          <Label htmlFor="tap-email">Email do Cliente (opcional)</Label>
+                          <Input
+                            id="tap-email"
+                            type="email"
+                            placeholder="cliente@email.com"
+                            value={tapClientEmail}
+                            onChange={(e) => setTapClientEmail(e.target.value)}
+                            className="text-base"
+                          />
+                        </div>
+                        
+                        {/* Summary */}
+                        {tapValor && (
+                          <div className="bg-muted rounded-lg p-3">
+                            <p className="text-sm font-medium">Resumo do Pagamento:</p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Valor: R$ {tapValor || '0,00'}
+                            </p>
+                            {tapPaymentMethod === 'credit' && (
+                              <p className="text-xs text-muted-foreground">
+                                Parcelas: {tapInstallments}x de R$ {tapValor ? (parseValueToCents(tapValor) / (parseInt(tapInstallments) * 100)).toFixed(2).replace('.', ',') : '0,00'}
+                              </p>
+                            )}
+                            <p className="text-xs text-muted-foreground">
+                              Método: {tapPaymentMethod === 'credit' ? 'Crédito' : 'Débito'}
+                            </p>
+                          </div>
+                        )}
+                        
+                        <Button
+                          onClick={handleTapPayment}
+                          disabled={tapPaymentLoading || !tapValor || !tapClientName}
+                          className="w-full"
+                          size="lg"
+                        >
+                          <CreditCard className="h-4 w-4 mr-2" />
+                          {tapPaymentLoading ? 'Processando...' : 'Processar Pagamento por Tap'}
+                        </Button>
+                        
+                        <p className="text-xs text-muted-foreground text-center">
+                          O cliente deve aproximar ou inserir o cartão quando solicitado
+                        </p>
+                      </div>
+                    </DrawerContent>
+                  </Drawer>
+                )}
                 </div>
               </CardContent>
             </Card>

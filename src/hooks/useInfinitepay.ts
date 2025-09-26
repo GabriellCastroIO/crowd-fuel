@@ -1,5 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
-import { getInfinitepayUser, processCheckoutPayment, UserData, PaymentData } from '@/lib/infinitepay';
+import { 
+  getInfinitepayUser, 
+  processCheckoutPayment, 
+  processTapPayment,
+  UserData, 
+  PaymentData, 
+  TapPaymentParams, 
+  TapPaymentData 
+} from '@/lib/infinitepay';
 
 export function useInfinitepayAvailability() {
   const [isAvailable, setIsAvailable] = useState(false);
@@ -71,4 +79,27 @@ export function useCheckoutPayment() {
   }, []);
 
   return { executePayment, loading, error };
+}
+
+export function useTapPayment() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const executeTapPayment = useCallback(async (params: TapPaymentParams): Promise<TapPaymentData | null> => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const result = await processTapPayment(params);
+      return result;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Payment failed';
+      setError(errorMessage);
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  return { executeTapPayment, loading, error };
 }
