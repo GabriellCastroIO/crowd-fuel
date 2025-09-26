@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { CreditCard, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useInfinitepayUser } from '@/hooks/useInfinitepay';
 
 interface Apoio {
   id: string;
@@ -36,8 +37,10 @@ export default function TapPayment() {
   
   const [apoio, setApoio] = useState<Apoio | null>(null);
   const [loading, setLoading] = useState(true);
-  const [currentUser, setCurrentUser] = useState<any>(null);
   const [tapPaymentLoading, setTapPaymentLoading] = useState(false);
+  
+  // Use the same hook as DetalhesApoio
+  const { user: currentUser } = useInfinitepayUser();
   
   // Form state
   const [tapValor, setTapValor] = useState('');
@@ -105,13 +108,9 @@ export default function TapPayment() {
         if (apoioError) throw apoioError;
         setApoio(apoioData);
 
-        // Get current user
-        const { data: { user } } = await supabase.auth.getUser();
-        setCurrentUser(user);
-
-        // Check if user is the owner
-        const isOwner = user && apoioData && 
-          String(apoioData.user_id).trim() === String(user.id).trim();
+        // Check if user is the owner (using the same logic as DetalhesApoio)
+        const isOwner = currentUser && apoioData && 
+          String(apoioData.user_id).trim() === String(currentUser.id).trim();
 
         if (!isOwner) {
           toast({
@@ -136,7 +135,7 @@ export default function TapPayment() {
     };
 
     fetchApoio();
-  }, [id, toast, navigate]);
+  }, [id, toast, navigate, currentUser]);
 
   const handleTapPayment = async () => {
     if (!apoio || !tapValor || !tapClientName) {
