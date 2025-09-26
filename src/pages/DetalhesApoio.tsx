@@ -139,9 +139,8 @@ export default function DetalhesApoio() {
     window.Infinitepay && 
     typeof window.Infinitepay.receiveTapPayment === 'function';
   
-  // TEMPORÁRIO: Forçando visibilidade do botão para testes
-  // TODO: Depois dos testes, voltar para: const canUseTapPayment = isOwner && isTapPaymentAvailable;
-  const canUseTapPayment = true; // FORÇADO PARA TESTES
+  // Apenas o dono da campanha pode usar o tap payment
+  const canUseTapPayment = isOwner && isTapPaymentAvailable;
   
       // Debug logs para verificar por que o botão não aparece
   useEffect(() => {
@@ -150,7 +149,7 @@ export default function DetalhesApoio() {
     console.log('🚀 typeof window:', typeof window);
     console.log('🚀 window keys:', typeof window !== 'undefined' ? Object.keys(window).filter(k => k.toLowerCase().includes('infinit')) : 'window não disponível');
     
-    console.log('🔍 Debug Tap Payment (MODO TESTE - BOTÃO FORÇADO):', {
+    console.log('🔍 Debug Tap Payment:', {
         user: currentUser ? {
           id: currentUser?.id,
           name: currentUser?.name,
@@ -684,8 +683,8 @@ export default function DetalhesApoio() {
 
                 {/* Support Button - Desktop */}
                 <div className="mt-auto space-y-3">
-                  {/* Tap Payment Button - FORÇADO PARA TESTES */}
-                  {/* FORÇADO PARA TESTES - Sempre mostra o botão */}
+                  {/* Tap Payment Button - Only for campaign owner */}
+                  {canUseTapPayment && (
                     <Button
                       className="w-full"
                       size="lg"
@@ -695,6 +694,7 @@ export default function DetalhesApoio() {
                       <CreditCard className="h-4 w-4 mr-2" />
                       Cobrar por Tap (Presencial)
                     </Button>
+                  )}
                   
                   <Dialog open={desktopDialogOpen} onOpenChange={setDesktopDialogOpen}>
                     <DialogTrigger asChild>
@@ -764,7 +764,8 @@ export default function DetalhesApoio() {
                   </DialogContent>
                 </Dialog>
                 
-                {/* Tap Payment Modal - FORÇADO PARA TESTES */}
+                {/* Tap Payment Modal - Only for campaign owner */}
+                {canUseTapPayment && (
                   <Drawer open={tapPaymentOpen} onOpenChange={setTapPaymentOpen}>
                     <DrawerContent className="px-4 pb-6">
                       <DrawerHeader>
@@ -881,7 +882,7 @@ export default function DetalhesApoio() {
                       </div>
                     </DrawerContent>
                   </Drawer>
-                  {/* FIM DO TAP PAYMENT MODAL - FORÇADO PARA TESTES */}
+                )}
                 </div>
               </CardContent>
             </Card>
@@ -951,16 +952,18 @@ export default function DetalhesApoio() {
 
                 {/* Support Buttons - Mobile */}
                 <div className="space-y-3">
-                  {/* Tap Payment Button - FORÇADO PARA TESTES */}
-                  <Button
-                    className="w-full"
-                    size="default"
-                    variant="outline"
-                    onClick={() => setTapPaymentOpen(true)}
-                  >
-                    <CreditCard className="h-4 w-4 mr-2" />
-                    Cobrar por Tap (Presencial)
-                  </Button>
+                  {/* Tap Payment Button - Only for campaign owner */}
+                  {canUseTapPayment && (
+                    <Button
+                      className="w-full"
+                      size="default"
+                      variant="outline"
+                      onClick={() => setTapPaymentOpen(true)}
+                    >
+                      <CreditCard className="h-4 w-4 mr-2" />
+                      Cobrar por Tap (Presencial)
+                    </Button>
+                  )}
                   
                   {/* Regular Support Button */}
                   <Drawer open={mobileDrawerOpen} onOpenChange={setMobileDrawerOpen}>
