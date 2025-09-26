@@ -663,10 +663,14 @@ export default function DetalhesApoio() {
                 <div className="min-h-[200px]">
                   <TabsContent value="sobre" className="p-4 sm:p-6 m-0">
                     <p className="whitespace-pre-wrap text-sm sm:text-base">{apoio.descricao}</p>
-                    <div className="flex items-center gap-4 mt-4 text-xs sm:text-sm text-muted-foreground">
+                    <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 mt-4 text-xs sm:text-sm text-muted-foreground">
                       <div className="flex items-center gap-1">
                         <Calendar className="h-3 sm:h-4 w-3 sm:w-4" />
                         {isMobile ? new Date(apoio.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }) : `Criado em ${new Date(apoio.created_at).toLocaleDateString('pt-BR')}`}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <User className="h-3 sm:h-4 w-3 sm:w-4" />
+                        <span>Criado por @{apoio.handle_infinitepay}</span>
                       </div>
                     </div>
                   </TabsContent>
